@@ -1,73 +1,81 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
-</p>
+## Code Challenge
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+To solve the proposed challenge I built a backend using [NestJS](https://nestjs.com/) with an endpoint that returns the required stats.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+### Running the application :rocket:
 
-## Description
+1. First of all you need to provide the environment file. There's a sample in `config/local.env.sample`. Create a new file `config/local.env` using this one as template, so the application can fetch the right data.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
+   An example of a `config/local.env` file:
 
 ```bash
-$ npm install
+API_ENDPOINT=https://api.supermetrics.com/assignment
+API_CLIENT_ID=your_client_id
+API_EMAIL=your_email
+API_NAME=your_name
+API_TOKEN_TTL=3600
 ```
 
-## Running the app
+2. After that, you can run the application using yarn:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+$ yarn # To install dependencies
+$ yarn start # To start the server
 ```
 
-## Test
+Alternatively, you can run the application using docker:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+$ docker compose up
 ```
 
-## Support
+This will start the NestJS server in http://localhost:3000.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+3. Once the server is up and running, you can query the endpoint for the stats in the url http://localhost:3000/stats
 
-## Stay in touch
+### The stack :woman_technologist:
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+I've chosen [NestJS](https://nestjs.com/) because I think it's one of the best Node frameworks available at the moment. It has great support for TypeScript out of the box, and it is really easy to set up a new project with all the necessary tooling, like jest, supertest for e2e tests, prettier, eslint etc.
 
-## License
+I also used [RxJS](https://rxjs.dev/) to manipulate the data, since it makes it easy to pipe through it and split it in different streams to be processed by different stats processors.
 
-Nest is [MIT licensed](LICENSE).
+To manipulate Dates, I used [momentjs](https://momentjs.com/), and to generate data for testing purposes I used [faker](https://github.com/faker-js/faker).
+
+### The architecture :building_construction:
+
+![architecture diagram](https://github.com/rcoedo/typescript-data-manipulation/blob/main/graph.png?raw=true)
+
+* **Client**: The client fetches data from the *API* and handles authentication + token caching.
+* **PostsService**: Its purpose is to fetch posts using the client, and to encapsulate pagination behavior. Pagination is transparent and from the outside the user only sees a stream of posts.
+* **StatsService**: Its main purpose is, given a stream of *Posts*, to calculate a set of statistics. The stream is split in many, and each of those passed to a *processor*. A *processor* is a pure function that receives a stream of *Posts* and returns the corresponding statistic result.
+* **StatsController**: Has a single endpoint that returns the stats for the first 1000 posts.
+
+
+
+### Testing
+
+There are unit tests for the different parts of the application. There's also an  *e2e* test under `test/app.e2e-spec.ts` that hits the API and checks the result using *Snapshot Testing*.
+
+To run the unit tests:
+
+```bash
+$ yarn test
+```
+
+To run the e2e test:
+
+```bash
+$ yarn test:e2e
+```
+
+Keep in mind that, since these tests are hitting the provided API, and the data is not static, they will fail. I still decided to include it because it is a good way to test the application. To update the snapshots:
+
+```bash
+$ yarn test:e2e -u
+```
+
+ 
+
+### That's it! :confetti_ball:
+
+Thanks for challenging me to build this application and I hope you like it :slightly_smiling_face:
