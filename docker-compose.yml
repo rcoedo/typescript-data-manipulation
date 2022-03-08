@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+    metrics:
+        container_name: metrics
+        image: metrics
+        build:
+          context: ./
+        command: yarn start:prod
+        ports:
+            - 3000:3000
+        networks:
+            - metrics
+        volumes:
+            - /app/node_modules
+        restart: unless-stopped
+
+networks:
+    metrics:
